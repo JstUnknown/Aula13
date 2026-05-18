@@ -28,7 +28,7 @@ state=None
 # FUNÇÃO PRA CONTAR DEDOS
 def count_fingers(hand_landmarks):
     fingers = []
-    landmarks=hand_landmark
+    landmarks=hand_landmarks.landmark
 
     for lm_index in tips:
         
@@ -47,7 +47,7 @@ while True:
     success, image = cap.read()
 
     image = cv2.flip(image, 1)
-
+    h,w,c=image.shape
     # IMPORTANTE (MediaPipe precisa RGB)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     results = hands.process(image_rgb)
@@ -56,8 +56,8 @@ while True:
     # drawHandLanMarks(image,hand_landmarks)
     # count_fingers(image,hand_landmarks)
     if results.multi_hand_landmarks:
-        for hand_landmark in results.multi_hand_landmarks:
-            mp_draw.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+        for hand_landmarks in results.multi_hand_landmarks:
+            mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
             landmarks=hand_landmarks.landmark
             totalFingers=count_fingers(hand_landmarks)
             #play
@@ -79,6 +79,28 @@ while True:
             screen_y=screen_height/h*index_y
             
             pyautogui.moveTo(screen_x,screen_y)
+            dist=math.hypot(index_x-thumb_x,index_y-thumb_y)
+            cv2.line(image,(index_x,index_y),(thumb_x,thumb_y),(255,0,0),3)
+            cv2.circle(image,(index_x,index_y),10,(0,255,0),-1)
+            cv2.circle(image,(thumb_x,thumb_y),10,(0,255,0),-1)
+
+            if dist<20 and not clicking:
+                cv2.line(image,(index_x,index_y),(thumb_x,thumb_y),(255,0,0),5)
+                pyautogui.click()
+                clicking=True
+            if dist>40:
+                clicking=False
+
+            if totalFingers==1:
+                if index_x<150:
+                    keyboard.press(Key.left)
+                    keyboard.release(Key.left)
+                   
+                if index_x>w-150:
+                    keyboard.press(Key.right)
+                    keyboard.release(Key.right)
+                   
+
     cv2.imshow("Controlador de Midia", image)
 
     key = cv2.waitKey(1)
